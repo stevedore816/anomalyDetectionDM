@@ -19,13 +19,15 @@ StdAvg = []
 for column in db.keys():
     # This one line calculates the inverse of the mean and subtracts all the attributes by it so mean = 0, and than / by the standard deviation across making the std = 1
     db[column] = (db[column] + (-1 * db[column].mean())) / (db[column].std())
-    print(db[column].mean(), db[column].std())
+
 # Create Correlation Matrix
 dbCorr = db.corr()
 print(dbCorr)
 for column in anomaly.keys():
     # This one line calculates the inverse of the mean and subtracts all the attributes by it so mean = 0, and than / by the standard deviation across making the std = 1
     anomaly[column] = (anomaly[column] + (-1 * anomaly[column].mean())) / (anomaly[column].std())
+    print(anomaly[column].mean(), anomaly[column].std())
+
 
 
 """Logic for Autoencoder Implementation
@@ -85,10 +87,16 @@ def getAutoEncoder(num,anon):
         else:
             tempDB[attr] = db[attr]
     return tempDB
-#autoencoder1 = getAutoEncoder(0,anon= False)
+autoencoder1 = getAutoEncoder(0,anon= False)
 #anomaly1 = getAutoEncoder(0,anon = True)
-#print(autoencoder1)
+print(len(db))
 
+def getAutoEncoderDB(num,db):
+    temp = pd.DataFrame()
+    for i in range (0, len(autoencoders[num]) - 1):
+        attr = autoencoders[num][i]
+        temp[attr] = [db[attr]]
+    return temp
 
 #Old method That I will delete alter doesn't do anything
 def returnDB(search):
@@ -113,6 +121,7 @@ disttest is a variable to see if we're testing the neural net based on dist or n
 anomalyDB is the anomalydetection we're going to be using that correlate to those respective attr during testing
 """
 matrixout = []
+avgloss = []
 def createNeuralNet(autoencoderDB,input, layers, middle,disttest,anomalyDB):
     #autoencoderDB = returnDB('MI')
     train = autoencoderDB.iloc[:int(.8 * len(autoencoderDB)), :]
@@ -127,16 +136,22 @@ def createNeuralNet(autoencoderDB,input, layers, middle,disttest,anomalyDB):
 
     autoencoder = Sequential()
     autoencoder.add(Dense(layers[0], activation='elu', input_shape=(input,)))
-    for i in range (1, len(layers)):
+    for i in range (1, len(layers) - 1):
         if i == middle:
             autoencoder.add(Dense(layers[middle], activation='linear'))
         else:
             autoencoder.add(Dense(layers[i], activation='elu'))
+    autoencoder.add(Dense(layers[len(layers) - 1], activation='linear'))
 
     autoencoder.compile(loss='mean_squared_error', optimizer='adam')
-    trained = autoencoder.fit(traintf,traintf,epochs=15,validation_data=(validtf,validtf))
-
-    print("Test Eval", autoencoder.evaluate(tttf,tttf))
+    trained = autoencoder.fit(traintf,traintf,epochs=10,validation_data=(validtf,validtf))
+    autoencoder.evaluate(tttf,tttf)
+    predictions = autoencoder.predict(traintf)
+    dist = np.sqrt((traintf - predictions) * (traintf - predictions))
+    #print(dist)
+    std = float(tf.math.reduce_std(dist))
+    mean = float(tf.reduce_mean(dist))
+    avgloss.append((mean,std))
     if disttest:
         test = autoencoderDB.iloc[13:14, :]
         testtf = tf.convert_to_tensor(test)
@@ -152,11 +167,150 @@ def createNeuralNet(autoencoderDB,input, layers, middle,disttest,anomalyDB):
         #print(dist)
         matrixout.append((distg,dist))
     return autoencoder
-auto1 = createNeuralNet(getAutoEncoder(0,anon=False), 16, [10,8,4,2,4,8,10,16],3,disttest= True, anomalyDB=getAutoEncoder(0,anon=True))
-auto2 = createNeuralNet(getAutoEncoder(1,anon=False), 16, [10,8,4,2,4,8,10,16],3,disttest= True, anomalyDB=getAutoEncoder(1,anon=True))
-auto3 = createNeuralNet(getAutoEncoder(2,anon=False), 9, [8,4,2,4,8,9],2,disttest= True, anomalyDB=getAutoEncoder(2,anon=True))
-auto4 = createNeuralNet(getAutoEncoder(3,anon=False), 6, [4,2,4,6],1,disttest= True, anomalyDB=getAutoEncoder(3,anon=True))
-auto5 = createNeuralNet(getAutoEncoder(4,anon=False), 9, [8,4,2,4,8,9],2,disttest= True, anomalyDB=getAutoEncoder(4,anon=True))
-auto6 = createNeuralNet(getAutoEncoder(5,anon=False), 7, [4,2,4,7],1,disttest= True, anomalyDB=getAutoEncoder(5,anon=True))
-auto7 = createNeuralNet(getAutoEncoder(6,anon=False), 6, [4,2,4,6],1,disttest= True, anomalyDB=getAutoEncoder(6,anon=True))
-print(matrixout)
+auto1 = createNeuralNet(getAutoEncoder(0,anon=False), 16, [10,8,4,1,4,8,10,16],3,disttest= False, anomalyDB=getAutoEncoder(0,anon=True))
+auto2 = createNeuralNet(getAutoEncoder(1,anon=False), 16, [10,8,4,1,4,8,10,16],3,disttest= False, anomalyDB=getAutoEncoder(1,anon=True))
+auto3 = createNeuralNet(getAutoEncoder(2,anon=False), 9, [8,4,1,4,8,9],2,disttest= False, anomalyDB=getAutoEncoder(2,anon=True))
+auto4 = createNeuralNet(getAutoEncoder(3,anon=False), 6, [4,1,4,6],1,disttest= False, anomalyDB=getAutoEncoder(3,anon=True))
+auto5 = createNeuralNet(getAutoEncoder(4,anon=False), 9, [8,4,1,4,8,9],2,disttest= False, anomalyDB=getAutoEncoder(4,anon=True))
+auto6 = createNeuralNet(getAutoEncoder(5,anon=False), 7, [4,1,4,7],1,disttest= False, anomalyDB=getAutoEncoder(5,anon=True))
+auto7 = createNeuralNet(getAutoEncoder(6,anon=False), 6, [4,1,4,6],1,disttest= False, anomalyDB=getAutoEncoder(6,anon=True))
+print(avgloss)
+
+"""Goal of this method is to return the distance from the predicted value vs the actual value"""
+def predictOld(autoencoder,anomaly,index):
+    flag = False
+    factor = 2.5
+    mean = avgloss[index][0]
+    std = avgloss[index][1]
+    anomaly = tf.convert_to_tensor(anomaly)
+    target = autoencoder.predict(anomaly)
+    dist = np.linalg.norm(anomaly - target)
+   # dist = np.sqrt((anomaly - target) * (anomaly - target))
+   # print(dist)
+    if dist >= mean + (std * factor) or dist <= mean - (std * factor) :
+        flag = True
+    return flag
+
+def EnsemblePrediction(subsection):
+    votes = []
+    test = getAutoEncoderDB(num=0, db=subsection)
+    votes.append(predict(auto1,test,0))
+    test = getAutoEncoderDB(num=1, db=subsection)
+    votes.append(predict(auto2, test, 1))
+    test = getAutoEncoderDB(num=2, db=subsection)
+    votes.append(predict(auto3, test, 2))
+    test = getAutoEncoderDB(num=3, db=subsection)
+    votes.append(predict(auto4, test, 3))
+    test = getAutoEncoderDB(num=4, db=subsection)
+    votes.append(predict(auto5, test, 4))
+    test = getAutoEncoderDB(num=5, db=subsection)
+    votes.append(predict(auto6, test, 5))
+    test = getAutoEncoderDB(num=6, db=subsection)
+    votes.append(predict(auto7, test, 6))
+    tot = 0
+    print(votes)
+    for vote in votes:
+        if vote:
+            tot = tot + 1
+    if tot >= 4:
+        return True
+    return False
+
+
+
+"""
+Plan C
+auto1.predict(tensoranon)
+auto2.predict(tensoranon)
+auto3.predict(tensoranon)
+auto4.predict(tensoranon)
+auto5.predict(tensoranon)
+Plan Z
+correct = 0
+for i in range(0,len(anomaly)):
+    subsection = anomaly.iloc[i,:]
+    #print(subsection)
+    if EnsemblePrediction(subsection):
+        correct = correct + 1
+avg1 = correct / len(anomaly)
+
+correct = 0
+for i in range(0,len(db)):
+    subsection = db.iloc[i,:]
+    #print(subsection)
+    if EnsemblePrediction(subsection) == False:
+        correct = correct + 1
+avg2 = correct /len(db)
+print(avg1, avg2)
+"""
+def predict(tensor,autoencoder,index):
+    data = []
+    factor = 3.4
+    mean = avgloss[index][0]
+    std = avgloss[index][1]
+    prediction = autoencoder.predict(tensor)
+    distance_matrix = (tensor - prediction)
+    for distHD in distance_matrix:
+        flag = False
+        dist = np.linalg.norm(distHD)
+        if dist >= mean + (std * factor) or dist <= mean - (std * factor):
+            flag = True
+        data.append(flag)
+    return data
+tensoranon1 = tf.convert_to_tensor(getAutoEncoder(0,anon=True))
+output1 = predict(tensoranon1,auto1,0)
+tensoranon2 = tf.convert_to_tensor(getAutoEncoder(1,anon=True))
+output2 = predict(tensoranon2,auto2,1)
+tensoranon3 = tf.convert_to_tensor(getAutoEncoder(2,anon=True))
+output3 = predict(tensoranon3,auto3,2)
+tensoranon4 = tf.convert_to_tensor(getAutoEncoder(3,anon=True))
+output4 = predict(tensoranon4,auto4,3)
+tensoranon5 = tf.convert_to_tensor(getAutoEncoder(4,anon=True))
+output5 = predict(tensoranon5,auto5,4)
+tensoranon6 = tf.convert_to_tensor(getAutoEncoder(5,anon=True))
+output6 = predict(tensoranon6,auto6,5)
+tensoranon7 = tf.convert_to_tensor(getAutoEncoder(6,anon=True))
+output7 = predict(tensoranon7,auto7,6)
+correct = 0
+for i in range(0, len(anomaly)):
+    count = 0
+    if output1[i]: count = count + 1
+    if output2[i]: count = count + 1
+    if output3[i]: count = count + 1
+    if output4[i]: count = count + 1
+    if output5[i]: count = count + 1
+    if output6[i]: count = count + 1
+    if output7[i]: count = count + 1
+    if count >= 4:
+        correct = correct + 1
+anoncorrect = correct / len(anomaly)
+#print(correct / len(anomaly))
+
+tensoranon1 = tf.convert_to_tensor(getAutoEncoder(0,anon=False))
+output1 = predict(tensoranon1,auto1,0)
+tensoranon2 = tf.convert_to_tensor(getAutoEncoder(1,anon=False))
+output2 = predict(tensoranon2,auto2,1)
+tensoranon3 = tf.convert_to_tensor(getAutoEncoder(2,anon=False))
+output3 = predict(tensoranon3,auto3,2)
+tensoranon4 = tf.convert_to_tensor(getAutoEncoder(3,anon=False))
+output4 = predict(tensoranon4,auto4,3)
+tensoranon5 = tf.convert_to_tensor(getAutoEncoder(4,anon=False))
+output5 = predict(tensoranon5,auto5,4)
+tensoranon6 = tf.convert_to_tensor(getAutoEncoder(5,anon=False))
+output6 = predict(tensoranon6,auto6,5)
+tensoranon7 = tf.convert_to_tensor(getAutoEncoder(6,anon=False))
+output7 = predict(tensoranon7,auto7,6)
+correct = 0
+for i in range(0, len(db)):
+    count = 0
+    if output1[i]: count = count + 1
+    if output2[i]: count = count + 1
+    if output3[i]: count = count + 1
+    if output4[i]: count = count + 1
+    if output5[i]: count = count + 1
+    if output6[i]: count = count + 1
+    if output7[i]: count = count + 1
+    if count < 4:
+        correct = correct + 1
+benigncorrect = correct / len(db)
+print("Anomaly Score: ", anoncorrect, "Benign Score: ", benigncorrect)
