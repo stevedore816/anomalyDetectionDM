@@ -245,7 +245,7 @@ print(avg1, avg2)
 """
 def predict(tensor,autoencoder,index):
     data = []
-    factor = 3.4
+    factor = 4.5
     mean = avgloss[index][0]
     std = avgloss[index][1]
     prediction = autoencoder.predict(tensor)
