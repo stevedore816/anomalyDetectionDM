@@ -283,6 +283,8 @@ for i in range(0, len(anomaly)):
     if output7[i]: count = count + 1
     if count >= 4:
         correct = correct + 1
+truepositive = correct
+falsenegative = len(anomaly) - correct
 anoncorrect = correct / len(anomaly)
 #print(correct / len(anomaly))
 
@@ -312,5 +314,10 @@ for i in range(0, len(db)):
     if output7[i]: count = count + 1
     if count < 4:
         correct = correct + 1
+truenegative = correct
+falsepositive = len(db) - truenegative
 benigncorrect = correct / len(db)
-print("Anomaly Score: ", anoncorrect, "Benign Score: ", benigncorrect)
+precision = truepositive / (truepositive + falsenegative)
+recall = truepositive/(truepositive + falsepositive)
+fmeasure = (2 * precision * recall) / (precision + recall)
+print("Precision: ", precision, "Recall: ", recall,"F-Measure: ", fmeasure)
