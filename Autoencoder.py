@@ -4,11 +4,11 @@ import keras
 from keras.models import Sequential, Model
 from keras.layers import Dense, Input
 from keras import optimizers
-from scipy.cluster import hierarchy as hc
+#from scipy.cluster import hierarchy as hc
 import numpy as np
 
 db = pd.read_csv("Data/benign_traffic.csv")
-anomaly = pd.read_csv("Data/gafgyt_attacks/scan.csv")
+anomaly = pd.concat(map(pd.read_csv,['Data/combo.csv','Data/junk.csv','Data/scan.csv','Data/tcp.csv','Data/udp.csv']), ignore_index= True)
 """Plan currently is to preprocess the data to make each feature have a mean of 0
 and a std. of 1 across so that we can use correlation as a distance measure to than add to a distance correlation matrix
 which will than result in clustering based on generic correlation for the AD ensemble algorithm"""
@@ -303,7 +303,7 @@ output6 = predict(tensoranon6,auto6,5)
 tensoranon7 = tf.convert_to_tensor(getAutoEncoder(6,anon=False))
 output7 = predict(tensoranon7,auto7,6)
 correct = 0
-for i in range(0, len(db)):
+for i in range(int(.8 * len(db)), len(db)):
     count = 0
     if output1[i]: count = count + 1
     if output2[i]: count = count + 1
@@ -321,3 +321,4 @@ precision = truepositive / (truepositive + falsenegative)
 recall = truepositive/(truepositive + falsepositive)
 fmeasure = (2 * precision * recall) / (precision + recall)
 print("Precision: ", precision, "Recall: ", recall,"F-Measure: ", fmeasure)
+print("True Postive: ",truepositive, "False Positive: ", falsepositive, "True Negative: ",truenegative, "False Negative: ", falsenegative)
