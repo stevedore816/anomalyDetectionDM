@@ -124,10 +124,10 @@ matrixout = []
 avgloss = []
 def createNeuralNet(autoencoderDB,input, layers, middle,disttest,anomalyDB):
     #autoencoderDB = returnDB('MI')
-    train = autoencoderDB.iloc[:int(.8 * len(autoencoderDB)), :]
+    train = autoencoderDB.iloc[:int(.6 * len(autoencoderDB)), :]
     trainx = train.iloc[int(.4 * len(train)):, :]
     validx = train.iloc[:int(.4 * len(train)), :]
-    traintest = autoencoderDB.iloc[int(.8 * len(autoencoderDB)):, :]
+    traintest = autoencoderDB.iloc[int(.6 * len(autoencoderDB)):, :]
 
     traintf = tf.convert_to_tensor(trainx)
     validtf = tf.convert_to_tensor(validx)
@@ -144,7 +144,7 @@ def createNeuralNet(autoencoderDB,input, layers, middle,disttest,anomalyDB):
     autoencoder.add(Dense(layers[len(layers) - 1], activation='linear'))
 
     autoencoder.compile(loss='mean_squared_error', optimizer='adam')
-    trained = autoencoder.fit(traintf,traintf,epochs=10,validation_data=(validtf,validtf))
+    trained = autoencoder.fit(traintf,traintf,epochs=7,validation_data=(validtf,validtf))
     autoencoder.evaluate(tttf,tttf)
     predictions = autoencoder.predict(traintf)
     dist = np.sqrt((traintf - predictions) * (traintf - predictions))
@@ -303,7 +303,7 @@ output6 = predict(tensoranon6,auto6,5)
 tensoranon7 = tf.convert_to_tensor(getAutoEncoder(6,anon=False))
 output7 = predict(tensoranon7,auto7,6)
 correct = 0
-for i in range(int(.8 * len(db)), len(db)):
+for i in range(int(.6 * len(db)), len(db)):
     count = 0
     if output1[i]: count = count + 1
     if output2[i]: count = count + 1
@@ -315,8 +315,8 @@ for i in range(int(.8 * len(db)), len(db)):
     if count < 4:
         correct = correct + 1
 truenegative = correct
-falsepositive = len(db) - truenegative
-benigncorrect = correct / len(db)
+falsepositive = int(.6 * len(db)) - truenegative
+benigncorrect = correct / int(.2 * len(db))
 precision = truepositive / (truepositive + falsenegative)
 recall = truepositive/(truepositive + falsepositive)
 fmeasure = (2 * precision * recall) / (precision + recall)
