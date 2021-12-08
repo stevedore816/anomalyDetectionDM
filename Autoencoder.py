@@ -144,7 +144,7 @@ def createNeuralNet(autoencoderDB,input, layers, middle,disttest,anomalyDB):
     autoencoder.add(Dense(layers[len(layers) - 1], activation='linear'))
 
     autoencoder.compile(loss='mean_squared_error', optimizer='adam')
-    trained = autoencoder.fit(traintf,traintf,epochs=7,validation_data=(validtf,validtf))
+    trained = autoencoder.fit(traintf,traintf,epochs=5,validation_data=(validtf,validtf))
     autoencoder.evaluate(tttf,tttf)
     predictions = autoencoder.predict(traintf)
     dist = np.sqrt((traintf - predictions) * (traintf - predictions))
@@ -315,7 +315,7 @@ for i in range(int(.6 * len(db)), len(db)):
     if count < 4:
         correct = correct + 1
 truenegative = correct
-falsepositive = int(.6 * len(db)) - truenegative
+falsepositive = int(.4 * len(db)) - truenegative
 benigncorrect = correct / int(.2 * len(db))
 precision = truepositive / (truepositive + falsenegative)
 recall = truepositive/(truepositive + falsepositive)
