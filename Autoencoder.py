@@ -144,7 +144,7 @@ def createNeuralNet(autoencoderDB,input, layers, middle,disttest,anomalyDB):
     autoencoder.add(Dense(layers[len(layers) - 1], activation='linear'))
 
     autoencoder.compile(loss='mean_squared_error', optimizer='adam')
-    trained = autoencoder.fit(traintf,traintf,epochs=5,validation_data=(validtf,validtf))
+    trained = autoencoder.fit(traintf,traintf,epochs=10,validation_data=(validtf,validtf))
     autoencoder.evaluate(tttf,tttf)
     predictions = autoencoder.predict(traintf)
     dist = np.sqrt((traintf - predictions) * (traintf - predictions))
@@ -169,7 +169,7 @@ def createNeuralNet(autoencoderDB,input, layers, middle,disttest,anomalyDB):
     return autoencoder
 auto1 = createNeuralNet(getAutoEncoder(0,anon=False), 16, [10,8,4,1,4,8,10,16],3,disttest= False, anomalyDB=getAutoEncoder(0,anon=True))
 auto2 = createNeuralNet(getAutoEncoder(1,anon=False), 16, [10,8,4,1,4,8,10,16],3,disttest= False, anomalyDB=getAutoEncoder(1,anon=True))
-auto3 = createNeuralNet(getAutoEncoder(2,anon=False), 9, [8,4,1,4,8,9],2,disttest= False, anomalyDB=getAutoEncoder(2,anon=True))
+auto3 = createNeuralNet(getAutoEncoder(2,anon=False), 9, [4,1,4,9],2,disttest= False, anomalyDB=getAutoEncoder(2,anon=True))
 auto4 = createNeuralNet(getAutoEncoder(3,anon=False), 6, [4,1,4,6],1,disttest= False, anomalyDB=getAutoEncoder(3,anon=True))
 auto5 = createNeuralNet(getAutoEncoder(4,anon=False), 9, [8,4,1,4,8,9],2,disttest= False, anomalyDB=getAutoEncoder(4,anon=True))
 auto6 = createNeuralNet(getAutoEncoder(5,anon=False), 7, [4,1,4,7],1,disttest= False, anomalyDB=getAutoEncoder(5,anon=True))
